@@ -1,5 +1,6 @@
 from ultralytics import YOLO
 import pygame
+import time
 import cv2
 
 pygame.init()
@@ -15,11 +16,11 @@ target_class_ids = [0]
 
 clock = pygame.time.Clock() 
 
-time = 0
+tick = 0
 font = pygame.font.SysFont(None, 50)
 tuuka = font.render("通過", True, (255,255,255))
 delay = 100
-lap = []
+laps = [0]
 # WEBカメラからリアルタイム検出
 results = model(0 , show=False, stream = True)
 for result in results:
@@ -42,19 +43,21 @@ for result in results:
 
     if x1 < width/2 and x2 > width/2 and delay > 30:
         delay = 0
-        lap.append(time)
+        laps.append(time)
         screen.blit(tuuka,(100,0))
 
-    text = font.render(f"{time}", True, (255,255,255))
+    text = font.render(f"{tick}", True, (255,255,255))
     screen.blit(text, (0, 0))
+
+    lap_txt = font.render(f"{laps[-1]}", True, (255,255,255))
+    screen.blit(lap_txt,(0,200))
     pygame.draw.line(screen, (0,95,0), (width/2,0), (width/2,height), 5)
     pygame.display.flip()  # 画面を更新
 
-    clock.tick(10)
-
-
-    time += 1
+    tick += 1
     delay += 1
+    
+    clock.tick(10)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
