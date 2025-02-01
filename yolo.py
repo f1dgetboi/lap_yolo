@@ -12,9 +12,14 @@ model.to("cuda")
 
 target_class_ids = [0]
 
+
+clock = pygame.time.Clock() 
+
 time = 0
 font = pygame.font.SysFont(None, 50)
-
+tuuka = font.render("通過", True, (255,255,255))
+delay = 100
+lap = []
 # WEBカメラからリアルタイム検出
 results = model(0 , show=False, stream = True)
 for result in results:
@@ -35,13 +40,21 @@ for result in results:
     frame = pygame.surfarray.make_surface(frame)
     screen.blit(frame, (0, 0))
 
+    if x1 < width/2 and x2 > width/2 and delay > 30:
+        delay = 0
+        lap.append(time)
+        screen.blit(tuuka,(100,0))
+
     text = font.render(f"{time}", True, (255,255,255))
     screen.blit(text, (0, 0))
     pygame.draw.line(screen, (0,95,0), (width/2,0), (width/2,height), 5)
     pygame.display.flip()  # 画面を更新
 
+    clock.tick(10)
+
 
     time += 1
+    delay += 1
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
