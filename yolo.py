@@ -18,9 +18,13 @@ clock = pygame.time.Clock()
 
 tick = 0
 font = pygame.font.SysFont(None, 50)
-tuuka = font.render("通過", True, (255,255,255))
+tuuka = font.render("tuuka", True, (255,255,255))
 delay = 100
 laps = [0]
+x1=0
+y1=0
+y2=0
+x2=0
 # WEBカメラからリアルタイム検出
 results = model(0 , show=False, stream = True)
 for result in results:
@@ -43,7 +47,7 @@ for result in results:
 
     if x1 < width/2 and x2 > width/2 and delay > 30:
         delay = 0
-        laps.append(time)
+        laps.append(tick)
         screen.blit(tuuka,(100,0))
 
     text = font.render(f"{tick}", True, (255,255,255))
