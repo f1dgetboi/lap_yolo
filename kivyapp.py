@@ -2,17 +2,32 @@ from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.image import Image
+from kivy.uix.label import Label
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 from kivy.core.window import Window
 import cv2
 from ultralytics import YOLO
+import time
+from kivy.properties import StringProperty
 
 class MainLayout(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.Isrunnning=False
+        self.starttime = 0
+        self.runningtime = 0
+        self.finishtime = 0
+        
         self.orientation = 'vertical'
-        self.img_widget = Image(size_hint=(1, 0.9))
+
+        self.num_box = BoxLayout(size_hint=(1, 0.1))
+        self.nowtime = Label(text='0')
+        self.num_box.add_widget(self.nowtime)
+        self.add_widget(self.num_box)
+
+
+        self.img_widget = Image(size_hint=(1, 0.8))
         self.add_widget(self.img_widget)
         self.button_box = BoxLayout(size_hint=(1, 0.1))
         self.start_btn = Button(text='Start')
@@ -33,8 +48,6 @@ class MainLayout(BoxLayout):
         self.capture = None
         self.event = None
 
-        self.Isrunnning=False
-
     def ready_detection(self, instance):
         if self.capture is None:
             self.capture = cv2.VideoCapture(0)
@@ -44,7 +57,8 @@ class MainLayout(BoxLayout):
             self.button_box.add_widget(self.start_btn,index=2)
 
     def start_detection(self,instance):
-        self.Isrunnning=True
+        self.Isrunnning=True#ここでtimeを取得してそこからの計算で時間を出す。より処理による誤差が減るはず
+        self.starttime = round(time.time()*1000)
 
     def stop_detection(self, instance):
         if self.event:
@@ -58,6 +72,9 @@ class MainLayout(BoxLayout):
         self.Isrunnning=False
 
     def update(self, dt):
+        #時間処理
+        self.nowtime.text = str(round(time.time()*1000)-self.starttime)
+
         ret, frame = self.capture.read()
         if not ret:
             return
