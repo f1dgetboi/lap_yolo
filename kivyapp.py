@@ -18,11 +18,14 @@ class MainLayout(BoxLayout):
         self.starttime = 0
         self.runningtime = 0
         self.finishtime = 0
+        self.x2=0
+        self.lastx2 = 0
+        self.passing_border = 400
         
         self.orientation = 'vertical'
 
         self.num_box = BoxLayout(size_hint=(1, 0.1))
-        self.nowtime = Label(text='0')
+        self.nowtime = Label(text='0',font_size=40)
         self.num_box.add_widget(self.nowtime)
         self.add_widget(self.num_box)
 
@@ -47,6 +50,7 @@ class MainLayout(BoxLayout):
         self.model.to("cuda")
         self.capture = None
         self.event = None
+        self.ready = False
 
     def ready_detection(self, instance):
         if self.capture is None:
@@ -55,10 +59,17 @@ class MainLayout(BoxLayout):
             self.event = Clock.schedule_interval(self.update, 1.0 / 10)
             self.button_box.remove_widget(self.ready_btn)
             self.button_box.add_widget(self.start_btn,index=2)
+            self.ready = True
 
-    def start_detection(self,instance):
-        self.Isrunnning=True#ここでtimeを取得してそこからの計算で時間を出す。より処理による誤差が減るはず
-        self.starttime = round(time.time()*1000)
+    def passing_detection(self,instance):
+        if not self.Isrunnning:
+            if self.x2 >= self.passing_border and self.lastx2 < self.passing_border:
+                self.start_detection('on_press')
+    def start_detection(self,instance,):
+        if not self.Isrunnning:
+            self.Isrunnning=True#ここでtimeを取得してそこからの計算で時間を出す。より処理による誤差が減るはず
+            self.starttime = round(time.time()*1000)
+            self.ready = False
 
     def stop_detection(self, instance):
         if self.event:
@@ -73,9 +84,13 @@ class MainLayout(BoxLayout):
 
     def update(self, dt):
         #時間処理
-        self.nowtime.text = str(round(time.time()*1000)-self.starttime)
+        if not self.ready:
+            self.nowtime.text = str(float((round(time.time()*1000)-self.starttime))/1000)
+        else:
+            self.nowtime.text = str(0)
 
         ret, frame = self.capture.read()
+        frame = cv2.flip(frame,1)#インカメだと逆だったので調節
         if not ret:
             return
         # YOLO推論
@@ -83,8 +98,13 @@ class MainLayout(BoxLayout):
         # 検出結果の描画（例: 青枠）
         for result in results:
             for detection in result.boxes:
-                x1, y1, x2, y2 = map(int, detection.xyxy[0])
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                x1,y1, self.x2, y2 = map(int, detection.xyxy[0])
+                cv2.rectangle(frame, (x1,y1), (self.x2, y2), (255, 0, 0), 2)
+        cv2.line(frame,(self.passing_border, 0), (self.passing_border, 600), (0, 0, 255), 5)
+        self.passing_detection('on_press')#buttonは押された時の状態をinstanceのところに送っていた
+        self.lastx2 = self.x2
+
+
         #Opencvでリサイズ
         width, height = Window.size
         resized_frame = cv2.resize(frame, (width, height))
